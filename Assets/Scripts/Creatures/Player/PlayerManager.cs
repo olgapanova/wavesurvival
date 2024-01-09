@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class PlayerManager : Singleton<PlayerManager>, IFixedTickable, IInfluenceOnUI
@@ -77,6 +76,7 @@ public class PlayerManager : Singleton<PlayerManager>, IFixedTickable, IInfluenc
         _playerModel.DamageReceiver.SetHpBarValue(1);
         _playerModel.DamageReceiver.SetDefenceBarValue(1);
 
+        //Timers in twin List which copied the index position of every weapon player have
         for (int i = 0; i < _playerModel.WeaponsData.Count; i++)
             _playerModel.WeaponIndexTimers.Add(0);
     }
@@ -116,13 +116,16 @@ public class PlayerManager : Singleton<PlayerManager>, IFixedTickable, IInfluenc
     {
         _playerModel.Rigidbody.position += InputInfo.MoveDirInput * _playerModel.Speed * fixedDeltaTime;
 
-        var x = InputInfo.MoveDirInput.x;
-        var y = InputInfo.MoveDirInput.y;
-        
-        _playerModel.Animator.SetFloat("Horizontal", x);
-        _playerModel.Animator.SetFloat("Vertical", y);
+        _playerModel.Animator.SetFloat("Horizontal", InputInfo.MoveDirInput.x);
+        _playerModel.Animator.SetFloat("Vertical", InputInfo.MoveDirInput.y);
         _playerModel.Animator.SetBool("IsMoving", true);
 
+        RotateFiringPoint(InputInfo.MoveDirInput.x, InputInfo.MoveDirInput.y);
+    }
+
+    //Because the player isn't actually rotate, I made a firing point which rotates similarly as the animation
+    private void RotateFiringPoint(float x, float y)
+    {
         if (x == y)
         {
             var angle = y < 0 ? 180 :
@@ -174,23 +177,9 @@ public class PlayerManager : Singleton<PlayerManager>, IFixedTickable, IInfluenc
 
         foreach (var firingPoint in activeWeapon.FiringPoints)
         {
-            var position = _playerModel.FiringPoint.transform.position + firingPoint.position;
-            var projectileObject = PrefabSpawner.Instance.Spawn(activeWeapon.AttackPrefab, position, firingPoint.rotation);
-            var firingPointTransform = _playerModel.FiringPoint.transform;
-            projectileObject.transform.RotateAround(firingPointTransform.position, Vector3.forward, firingPointTransform.rotation.eulerAngles.z);
-            
-            var projectile = new Projectile()
-            {
-                ProjectileObject = projectileObject,
-                DespawnDistance = activeWeapon.DespawnDistance,
-                MoveDirection = projectileObject.transform.up,
-                MoveSpeed = activeWeapon.MoveSpeed,
-                StartPoint = position
-            };
+            CreateProjectile(firingPoint, out var projectile);
 
-            ProjectileControlSystem.Instance.RegisterProjectile(projectile);
-
-            var damager = projectileObject.GetComponent<Damager>();
+            var damager = projectile.ProjectileObject.GetComponent<Damager>();
             damager.DamageInfo.DamageValue = activeWeapon.AttackDamageValue;
             damager.DamageInfo.DefenceBreakingValue = activeWeapon.AttackDefenceBreakingValue;
             damager.DamageInfo.DamageInitiator = _player;
@@ -203,12 +192,33 @@ public class PlayerManager : Singleton<PlayerManager>, IFixedTickable, IInfluenc
         }
     }
 
+    //Creating the projectile in world considering firing point on player's position and rotation 
+    private void CreateProjectile(FiringPoint firingPoint, out Projectile projectile)
+    {
+        var position = _playerModel.FiringPoint.transform.position + firingPoint.position;
+        var projectileObject = PrefabSpawner.Instance.Spawn(_playerModel.ActiveWeaponData.AttackPrefab, position, firingPoint.rotation);
+        var firingPointTransform = _playerModel.FiringPoint.transform;
+        projectileObject.transform.RotateAround(firingPointTransform.position, Vector3.forward, firingPointTransform.rotation.eulerAngles.z);
+            
+        projectile = new Projectile()
+        {
+            ProjectileObject = projectileObject,
+            DespawnDistance = _playerModel.ActiveWeaponData.DespawnDistance,
+            MoveDirection = projectileObject.transform.up,
+            MoveSpeed = _playerModel.ActiveWeaponData.MoveSpeed,
+            StartPoint = position
+        };
+
+        ProjectileControlSystem.Instance.RegisterProjectile(projectile);
+    }
+
     private void OnDamageApplied(DamageInfo damageInfo, GameObject objectToDamage)
     {
         if (objectToDamage.layer == LayerMask.NameToLayer("Player")) return;
 
         if (damageInfo.Projectile != null)
         {
+            //TODO: I want to make explosion damage for future
             if (damageInfo.Projectile.ExplosionData != null)
             {
                 //for explosion logic for future

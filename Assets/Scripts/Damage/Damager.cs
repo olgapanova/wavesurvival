@@ -9,8 +9,6 @@ public class Damager : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collisionObject)
     {
         if (collisionObject.TryGetComponent<DamageReceiver>(out var damageReceiver))
-        {
             DamageApplied?.Invoke(DamageInfo, collisionObject.gameObject);
-        }
     }
 }

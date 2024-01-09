@@ -5,10 +5,7 @@ public class ProjectileControlSystem : Singleton<ProjectileControlSystem>, ITick
 {
     private List<Projectile> _registeredProjectiles = new(); 
 
-    public void RegisterProjectile(Projectile projectile)
-    {
-        _registeredProjectiles.Add(projectile);
-    }
+    public void RegisterProjectile(Projectile projectile) => _registeredProjectiles.Add(projectile);
 
     public void UnregisterAndDespawnProjectile(Projectile projectile)
     {
@@ -23,6 +20,8 @@ public class ProjectileControlSystem : Singleton<ProjectileControlSystem>, ITick
         for (int i = 0; i < _registeredProjectiles.Count; i++)
         {
             var projectile = _registeredProjectiles[i];
+            
+            //TODO: that is also some todo logic for future for projectiles which follow player and despawn by timer, not only distance
             if (projectile.Target != null)
             {
                 if (projectile.CurrentDespawnTimer <= 0)
@@ -36,9 +35,7 @@ public class ProjectileControlSystem : Singleton<ProjectileControlSystem>, ITick
                 projectile.ProjectileObject.transform.position += directionToTarget * projectile.MoveSpeed * Time.deltaTime;
             }
             else
-            {
                 projectile.ProjectileObject.transform.position += projectile.MoveDirection * projectile.MoveSpeed * Time.deltaTime;
-            }
             
             if (Vector2.Distance(projectile.StartPoint, projectile.ProjectileObject.transform.position) >= projectile.DespawnDistance)
                 UnregisterAndDespawnProjectile(projectile);

@@ -12,9 +12,7 @@ public class DamageReceiver : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collisionObject)
     {
         if (collisionObject.TryGetComponent<Damager>(out var damager))
-        {
             DamageReceived?.Invoke(gameObject, damager.DamageInfo);
-        }
     }
 
     public void SetHpBarValue(float value)

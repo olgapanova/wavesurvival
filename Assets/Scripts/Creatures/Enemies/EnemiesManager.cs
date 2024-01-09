@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -39,6 +38,55 @@ public class EnemiesManager : Singleton<EnemiesManager>, IFixedTickable, IInflue
         UIView.ClearEnemiesCounter();
         DespawnAll();
     }
+    
+    #region ParametersSetters
+
+    private void SetEnemyParameters(EnemyData enemyData, GameObject enemyObject, out EnemyModel model)
+    {
+        model = new EnemyModel()
+        {
+            MaxHp = enemyData.Hp,
+            Hp = enemyData.Hp,
+            Defence = enemyData.Defence,
+            MaxDefence = enemyData.Defence,
+            Speed = enemyData.Speed,
+            WeaponData = enemyData.WeaponData,
+            ArriveDistanceToTarget = enemyData.ArriveDistanceToTarget,
+            AttackDelayTimer = 0,
+            DamageReceiver = enemyObject.GetComponent<DamageReceiver>()
+        };
+
+        if (model.DamageReceiver.DamageReceived != null)
+            model.DamageReceiver.DamageReceived -= OnDamageReceived;
+        
+        model.DamageReceiver.DamageReceived += OnDamageReceived;
+        model.DamageReceiver.SetHpBarValue(1);
+        model.DamageReceiver.SetDefenceBarValue(1);
+
+        //In current state all enemies are melee, but maybe for future issues I made this "if" to set melee damager
+        if (model.WeaponData.WeaponType == WeaponType.Melee)
+            SetMeleeDamager(model, enemyObject);
+    }
+
+    private void SetMeleeDamager(EnemyModel model, GameObject enemyObject)
+    {
+        var damagerObject = PrefabSpawner.Instance.Spawn(model.WeaponData.AttackPrefab, position: enemyObject.transform.position, parent: enemyObject.transform);
+        model.MeleeDamager = damagerObject.GetComponent<Damager>();
+        model.MeleeDamager.DamageInfo.DamageInitiator = enemyObject;
+        model.MeleeDamager.DamageInfo.DamageValue = model.WeaponData.AttackDamageValue;
+        model.MeleeDamager.DamageInfo.DefenceBreakingValue = model.WeaponData.AttackDefenceBreakingValue;
+        model.MeleeDamager.DamageInfo.Projectile = null;
+            
+        if (model.MeleeDamager.DamageApplied != null)
+            model.MeleeDamager.DamageApplied -= OnDamageApplied;
+            
+        model.MeleeDamager.DamageApplied += OnDamageApplied;
+            
+        model.MeleeDamagerCollider = model.MeleeDamager.GetComponent<Collider2D>();
+        model.MeleeDamagerCollider.enabled = true;
+    }
+
+    #endregion
 
     #region Random Spawn and Despawn Logic
     
@@ -55,48 +103,7 @@ public class EnemiesManager : Singleton<EnemiesManager>, IFixedTickable, IInflue
         _registeredEnemies.Add(spawnedEnemy, enemyModel);
         _spawnEnemiesDelayTimer = _spawnerData.AfterSpawnDelaySec;
     }
-
-    private void SetEnemyParameters(EnemyData enemyData, GameObject enemyObject, out EnemyModel model)
-    {
-        model = new EnemyModel()
-        {
-            MaxHp = enemyData.Hp,
-            Hp = enemyData.Hp,
-            Defence = enemyData.Defence,
-            MaxDefence = enemyData.Defence,
-            Speed = enemyData.Speed,
-            WeaponData = enemyData.WeaponData,
-            DamageReceiver = enemyObject.GetComponent<DamageReceiver>()
-        };
-
-        if (model.DamageReceiver.DamageReceived != null)
-            model.DamageReceiver.DamageReceived -= OnDamageReceived;
-        
-        model.DamageReceiver.DamageReceived += OnDamageReceived;
-        model.DamageReceiver.SetHpBarValue(1);
-        model.DamageReceiver.SetDefenceBarValue(1);
-        model.ArriveDistanceToTarget = enemyData.ArriveDistanceToTarget;
-        model.AttackDelayTimer = 0;
-
-        if (model.WeaponData.WeaponType == WeaponType.Melee)
-        {
-            var damagerObject = PrefabSpawner.Instance.Spawn(model.WeaponData.AttackPrefab, position: enemyObject.transform.position, parent: enemyObject.transform);
-            model.MeleeDamager = damagerObject.GetComponent<Damager>();
-            model.MeleeDamager.DamageInfo.DamageInitiator = enemyObject;
-            model.MeleeDamager.DamageInfo.DamageValue = model.WeaponData.AttackDamageValue;
-            model.MeleeDamager.DamageInfo.DefenceBreakingValue = model.WeaponData.AttackDefenceBreakingValue;
-            model.MeleeDamager.DamageInfo.Projectile = null;
-            
-            if (model.MeleeDamager.DamageApplied != null)
-                model.MeleeDamager.DamageApplied -= OnDamageApplied;
-            
-            model.MeleeDamager.DamageApplied += OnDamageApplied;
-            
-            model.MeleeDamagerCollider = model.MeleeDamager.GetComponent<Collider2D>();
-            model.MeleeDamagerCollider.enabled = true;
-        }
-    }
-
+    
     private Vector2 GenerateRandomSpawnPoint()
     {
         //Make a closest point on bounds at Physics2D is a bit problematic, 'cause if point is inside the area ClosestPoint returns the incoming value
@@ -161,7 +168,6 @@ public class EnemiesManager : Singleton<EnemiesManager>, IFixedTickable, IInflue
 
     #endregion
     
-    //TODO: maybe a good idea to register and replace it somewhere else
     private void OnDamageApplied(DamageInfo enemyDamageInfo, GameObject objectToDamage)
     {
         if (objectToDamage.layer == LayerMask.NameToLayer("Enemies"))
@@ -203,15 +209,15 @@ public class EnemiesManager : Singleton<EnemiesManager>, IFixedTickable, IInflue
 
     public void FixedUpdate(float fixedDeltaTime)
     {
+        if (_canSpawnEnemies && _spawnEnemiesDelayTimer == 0 && _registeredEnemies.Count < _spawnerData.MaxSpawnedEnemiesCount)
+            SpawnEnemy();
+        
         if (_spawnEnemiesDelayTimer != 0)
         {
             _spawnEnemiesDelayTimer -= fixedDeltaTime;
             if (_spawnEnemiesDelayTimer < 0)
                 _spawnEnemiesDelayTimer = 0;
         }
-        
-        if (_canSpawnEnemies && _spawnEnemiesDelayTimer == 0 && _registeredEnemies.Count < _spawnerData.MaxSpawnedEnemiesCount)
-            SpawnEnemy();
         
         foreach (var enemy in _registeredEnemies)
         {
@@ -229,6 +235,7 @@ public class EnemiesManager : Singleton<EnemiesManager>, IFixedTickable, IInflue
             
             if (!PlayerManager.Instance.IsPlayerActive) continue;
             
+            //Move Enemy logic - it stops before player
             if (Vector2.Distance(PlayerManager.Instance.Player.position, enemy.Key.transform.position) > enemy.Value.ArriveDistanceToTarget)
             {
                 var direction = (PlayerManager.Instance.Player.position - enemy.Key.transform.position).normalized;

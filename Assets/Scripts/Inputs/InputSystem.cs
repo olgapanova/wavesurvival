@@ -4,10 +4,7 @@ public class InputSystem : ITickable
 {
     private InputInfo _inputInfo;
 
-    public InputSystem(InputInfo inputInfo)
-    {
-        _inputInfo = inputInfo;
-    }
+    public InputSystem(InputInfo inputInfo) => _inputInfo = inputInfo;
 
     private void UpdateInputs()
     {
@@ -24,8 +21,5 @@ public class InputSystem : ITickable
             _inputInfo.TriggerCastSpell();
     }
     
-    public void Update()
-    {
-        UpdateInputs();
-    }
+    public void Update() => UpdateInputs();
 }
