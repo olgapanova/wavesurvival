@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50521723e4f2a44498c08c5d24f5c846, type: 3}
+  m_Name: EnemiesSpawnerData
+  m_EditorClassIdentifier: 
+  <Prefab>k__BackingField: {fileID: 4963020648537327831, guid: a5f889689220c2044924b763ec352dd2, type: 3}
+  <MaxSpawnedEnemiesCount>k__BackingField: 10
+  <AfterSpawnDelaySec>k__BackingField: 1

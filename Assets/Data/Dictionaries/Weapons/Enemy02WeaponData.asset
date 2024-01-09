@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b206caf774a47544d95e003ce4366521, type: 3}
+  m_Name: Enemy02WeaponData
+  m_EditorClassIdentifier: 
+  <WeaponType>k__BackingField: 1
+  <AttackPrefab>k__BackingField: {fileID: 7809851263153080529, guid: 0b1ec54b14dc1594ea4fd19c1b4c868e, type: 3}
+  <AttackPeriod>k__BackingField: 1
+  <AttackDamageValue>k__BackingField: 10
+  <AttackDefenceBreakingValue>k__BackingField: 0.05
+  <MoveSpeed>k__BackingField: 0
+  <DespawnDistance>k__BackingField: 0
+  <FiringPoints>k__BackingField: []
